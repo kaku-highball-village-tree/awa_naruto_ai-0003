@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""指定文字列の差し替えと4ページ目から5ページ目への移動を安全に行うコマンド。
+"""従来の文字列差し替え・移動に続け、情報Ⅰの本文を追加して7ページにするコマンド。
 
 PyMuPDF が未導入の場合:
     py -m pip install pymupdf
@@ -24,6 +24,245 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Sequence
 
+
+# 確定本文：添付HTMLのmain領域から抽出。各配列の1番目が「本文1」等に対応。
+INFORMATION_TITLES = ('情報Ⅰ 受講生募集', 'なぜ「情報Ⅰ」を勉強する必要があるのか')
+
+INFORMATION_HEADINGS = ('高3',
+ '高1・高2',
+ '授業',
+ '募集要項',
+ '情報Ⅰを効率的に学ぶ理由',
+ '教室所在地',
+ 'お問い合わせ・お申し込み',
+ '数字で見る情報Ⅰ',
+ '理由1\u3000国公立大学で重要な受験科目',
+ '理由2\u300030万人以上が受験',
+ '理由3\u3000「簡単な科目」とは限らない',
+ '理由4\u3000暗記だけでは解けない',
+ '理由5\u3000プログラミングで差がつきやすい',
+ '理由6\u3000データ分析も重要',
+ '理由7\u3000AI時代にも役立つ',
+ 'なぜ高1・高2から始めるのか',
+ '高1・高2の今から準備する',
+ '出典')
+
+INFORMATION_SUBHEADINGS = ('共通テスト直前対策', '共通テストに向けた基礎学習')
+
+INFORMATION_BODIES = ('AIを活用した学習により、共通テストに向けた基礎学習を短期間で集中的に進めます。',
+ '基礎学習が終了次第、共通テスト本番に向けて、実戦形式の問題演習を行います。',
+ '2進数、論理演算、ネットワーク、データ分析など、情報Ⅰの基礎を一つずつ丁寧に学び、高3での共通テスト対策につなげます。',
+ 'プログラミングについては、変数・条件分岐・繰り返し・配列・アルゴリズムなど、共通テストで問われる考え方を重視して学びます。',
+ 'また、教科書で扱われる内容に合わせて、PythonやVBAなどの実際のプログラミング言語にも触れながら、プログラムを読む力・考える力・処理の流れを理解する力を身につけます。',
+ '高校「情報Ⅰ」の教科書内容と大学入試につながる、実践的なプログラミング学習も行います。',
+ '週1回（月4回）・1回70分',
+ '開催曜日は未定です。決まり次第、このページでお知らせします。',
+ '情報Ⅰの学習では、AIの活用を前提とします。',
+ '情報Ⅰに必要以上の時間をかけるのではなく、AIを活用して理解・演習・復習を効率化し、国語・数学・英語・理科・社会など、他の受験科目に使う時間を確保することを目指します。',
+ 'AIの回答をそのまま使用するのではなく、内容が正しいかを確認し、自分で考えて問題を解く力を身につけます。AIを利用できない共通テスト本番でも、自力で解答できることを目指します。',
+ '2025年1月実施の大学入学共通テストから「情報Ⅰ」が加わりました。それ以前は、5教科7科目を中心に対策する必要がありました。',
+ '現在、国公立大学の一般的な受験では、従来の5教科7科目に「情報Ⅰ」が加わり、6教科8科目への対応が求められるようになっています。',
+ '※大学入学共通テストで必要となる教科・科目は、志望大学・学部・入試方式によって異なります。必ず各大学が公表する最新の入試情報をご確認ください。',
+ 'もともと5教科7科目だけでも学習量は多く、特に高校3年生になると、情報Ⅰだけに多くの時間をかけることは簡単ではありません。',
+ 'そこで、AIを活用して情報Ⅰを効率的に学び、限られた時間で必要な力を身につけます。',
+ '特に高1・高2のうちから情報Ⅰの基礎を固め、プログラミングやデータ分析などの考え方に慣れておけば、高3では情報Ⅰにかける時間を減らし、国語・数学・英語・理科・社会などの主要教科の受験勉強に、より多くの時間を使えるようになります。',
+ '斎田教室〒772-0002 徳島県鳴門市撫養町斎田字東発16-13',
+ '詳しい地図で見る',
+ '受講をご希望の方は、フリーダイヤルまたは電子メールでお問い合わせください。授業料、開催曜日、受講開始時期などについてご案内します。',
+ 'フリーダイヤル：0120-85-6819',
+ '電子メール：tamiki@nmt.ne.jp',
+ '2025年度の大学入学共通テストから、「情報Ⅰ」が新しい出題科目として加わりました。',
+ '情報Ⅰを勉強する大きな理由は、大学入試で必要になったからです。',
+ '特に国公立大学を目指す高校生にとって、情報Ⅰは重要な受験科目になっています。',
+ '情報Ⅰの試験時間・配点を見る',
+ '河合塾の集計によると、2025年度入試の前期日程では、',
+ '国立大学の97％の募集区分で「情報Ⅰ」が必須',
+ 'となっています。',
+ 'つまり、国立大学を目指す場合、情報Ⅰはほぼ必須です。',
+ '公立大学でも、',
+ '44％の募集区分で「情報Ⅰ」が必須',
+ 'となっています。',
+ 'さらに、他教科との選択科目として利用できる募集区分もあり、全募集区分の38％を占めています。',
+ '志望校がまだ決まっていない高1・高2生も、早めに学んでおくことで、大学選択の幅を広く保てます。',
+ '2026年度共通テストでは、',
+ '305,202人',
+ 'が「情報Ⅰ」を受験しました。',
+ '情報系学部だけの科目ではなく、多くの高校生が受験する主要科目になっています。',
+ '平均点は、',
+ 'でした。',
+ '1年で大きく変化しているため、',
+ '「高3になってから少し勉強すれば大丈夫」',
+ 'とは限りません。',
+ '早めに基礎を固めることが重要です。',
+ '共通テストでは、',
+ 'という力が求められます。',
+ '単に用語を覚えるだけでなく、知識を問題の中で使える状態にする必要があります。',
+ '特定のプログラミング言語を暗記する必要はありませんが、',
+ 'などの基本的な考え方は理解する必要があります。',
+ 'プログラミング分野は平均点が低い傾向もあり、しっかり理解できれば、得点差をつけやすい分野になります。',
+ '情報Ⅰでは、',
+ 'などを使い、',
+ '「このデータから何が読み取れるのか」',
+ 'を考えます。',
+ 'データを読み取る力も、共通テストでは重要です。',
+ '情報Ⅰで学ぶ、',
+ 'は、生成AIを安全に使うための基礎知識にもなります。',
+ '高校3年生になると、',
+ 'などの受験勉強が本格化します。',
+ 'その時点から情報Ⅰを一から始めると、負担が大きくなります。',
+ '特に、',
+ 'は、直前の暗記だけでは対応しにくい分野です。',
+ '高1・高2のうちから、',
+ 'という段階まで進めておくことが大切です。',
+ '国立大学では97％の募集区分で必須。',
+ '公立大学でも44％の募集区分で必須。',
+ '高1・高2のうちに基礎を固めておけば、高3では他の受験科目により多くの時間を使えます。',
+ '情報Ⅰを早めに準備し、共通テストの得点源にすることが大切です。')
+
+INFORMATION_LISTS = (('ul',
+  (('国語', ()),
+   ('社会（日本史、世界史、地理、倫理、政治・経済など）', ()),
+   ('数学', ()),
+   ('理科（物理、化学、生物、地学）', ()),
+   ('外国語', ()))),
+ ('ol', (('文章を読む', ()), ('条件を整理する', ()), ('図・表・データ・プログラムを読み取る', ()), ('答えを導く', ()))),
+ ('ul', (('変数', ()), ('条件分岐', ()), ('繰り返し', ()), ('配列', ()), ('アルゴリズム', ()))),
+ ('ul', (('表', ()), ('グラフ', ()), ('平均', ()), ('分散', ()), ('相関関係', ()))),
+ ('ul',
+  (('情報モラル', ()), ('知的財産', ()), ('情報セキュリティ', ()), ('データ', ()), ('アルゴリズム', ()), ('ネットワーク', ()))),
+ ('ul', (('国語', ()), ('数学', ()), ('英語', ()), ('理科', ()), ('地歴公民', ()))),
+ ('ul', (('2進数', ()), ('論理演算', ()), ('プログラミング', ()), ('ネットワーク', ()), ('データ分析', ()))),
+ ('ol', (('分かる', ()), ('解ける', ()), ('共通テストでも解ける', ()))))
+
+INFORMATION_TABLES = (('',
+  (('対象', '高校1年生・高校2年生・高校3年生'),
+   ('授業回数', '週1回（月4回）'),
+   ('授業時間', '1回70分'),
+   ('開催曜日', '未定（決まり次第、このページでお知らせします）'),
+   ('授業料', '金額未定（決まり次第、このページでお知らせします）'),
+   ('申込方法', '下記の「お問い合わせ・お申し込み」をご参照ください。'),
+   ('教室', '斎田教室'),
+   ('所在地', '〒772-0002 徳島県鳴門市撫養町斎田字東発16-13'))),
+ ('',
+  (('国立大学・必須の募集区分', '97％'),
+   ('公立大学・必須の募集区分', '44％'),
+   ('公立大学・他教科との選択', '38％'),
+   ('2026年度「情報Ⅰ」受験者数', '305,202人'),
+   ('2025年度平均点', '69.26点'),
+   ('2026年度平均点', '56.59点'))),
+ ('「情報Ⅰ」の年度別平均点', (('年度', '平均点'), ('2025年度', '69.26点'), ('2026年度', '56.59点'))))
+
+INFORMATION_SOURCES = (('ul',
+  (('河合塾 Kei-Net「共通テストと2次試験で決まる国公立大学入試」（外部サイト）河合塾調べ。2024年8月28日現在、前期日程募集区分数で集計。',
+    (('河合塾 Kei-Net「共通テストと2次試験で決まる国公立大学入試」（外部サイト）',
+      'https://www.keinet.ne.jp/exam/basic/structure/national.html'),)),
+   ('大学入試センター「共通テスト 受験者数・平均点の推移（本試験）」（外部サイト）',
+    (('大学入試センター「共通テスト 受験者数・平均点の推移（本試験）」（外部サイト）',
+      'https://www.dnc.ac.jp/kyotsu/suii/R3_.html'),)))),)
+
+INFORMATION_CONTENT_ORDER = (('title', 0),
+ ('heading', 0),
+ ('subheading', 0),
+ ('body', 0),
+ ('body', 1),
+ ('heading', 1),
+ ('subheading', 1),
+ ('body', 2),
+ ('body', 3),
+ ('body', 4),
+ ('body', 5),
+ ('heading', 2),
+ ('body', 6),
+ ('body', 7),
+ ('body', 8),
+ ('body', 9),
+ ('body', 10),
+ ('heading', 3),
+ ('table', 0),
+ ('heading', 4),
+ ('body', 11),
+ ('list', 0),
+ ('body', 12),
+ ('body', 13),
+ ('body', 14),
+ ('body', 15),
+ ('body', 16),
+ ('heading', 5),
+ ('body', 17),
+ ('body', 18),
+ ('heading', 6),
+ ('body', 19),
+ ('body', 20),
+ ('body', 21),
+ ('title', 1),
+ ('body', 22),
+ ('body', 23),
+ ('body', 24),
+ ('heading', 7),
+ ('table', 1),
+ ('body', 25),
+ ('heading', 8),
+ ('body', 26),
+ ('body', 27),
+ ('body', 28),
+ ('body', 29),
+ ('body', 30),
+ ('body', 31),
+ ('body', 32),
+ ('body', 33),
+ ('body', 34),
+ ('heading', 9),
+ ('body', 35),
+ ('body', 36),
+ ('body', 37),
+ ('body', 38),
+ ('heading', 10),
+ ('body', 39),
+ ('table', 2),
+ ('body', 40),
+ ('body', 41),
+ ('body', 42),
+ ('body', 43),
+ ('body', 44),
+ ('heading', 11),
+ ('body', 45),
+ ('list', 1),
+ ('body', 46),
+ ('body', 47),
+ ('heading', 12),
+ ('body', 48),
+ ('list', 2),
+ ('body', 49),
+ ('body', 50),
+ ('heading', 13),
+ ('body', 51),
+ ('list', 3),
+ ('body', 52),
+ ('body', 53),
+ ('body', 54),
+ ('body', 55),
+ ('heading', 14),
+ ('body', 56),
+ ('list', 4),
+ ('body', 57),
+ ('heading', 15),
+ ('body', 58),
+ ('list', 5),
+ ('body', 59),
+ ('body', 60),
+ ('body', 61),
+ ('list', 6),
+ ('body', 62),
+ ('body', 63),
+ ('list', 7),
+ ('body', 64),
+ ('heading', 16),
+ ('body', 65),
+ ('body', 66),
+ ('body', 67),
+ ('body', 68),
+ ('heading', 17),
+ ('source', 0))
 
 INPUT_PDF_NAME = "阿波なるとAI塾_PR_ver2_編集前の原稿.pdf"
 OUTPUT_PDF_NAME = "阿波なるとAI塾_PR_ver2_開講日変更後.pdf"
@@ -323,8 +562,10 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--render-comparison",
         action="store_true",
-        help="3～5ページ目の変更前後を確認用PNGとして出力します。",
+        help="変更前の3～5ページ目と変更後の3～7ページ目を確認用PNGとして出力します。",
     )
+    parser.add_argument("--map-image", type=Path, help="教室所在地の地図画像（省略時はスクリプトと同じ場所の教室所在地_地図.png）")
+    parser.add_argument("--map-link-only", action="store_true", help="地図画像を掲載せず、地図リンクだけを掲載する仕様変更を明示します。")
     return parser.parse_args(argv)
 
 
@@ -2927,7 +3168,8 @@ def render_comparison_images(
 ) -> tuple[Path, ...]:
     """3～5ページ目をPDFとは独立した確認用PNGへ描画する。"""
     paths: list[Path] = []
-    for page_index in sorted(edited_page_indexes()):
+    indexes = set(range(2, 7)) if doc.page_count == 7 else edited_page_indexes()
+    for page_index in sorted(indexes):
         path = _available_comparison_path(program_dir, phase, page_index + 1)
         pixmap = doc[page_index].get_pixmap(dpi=COMPARISON_DPI, alpha=False)
         pixmap.save(path)
@@ -2981,12 +3223,266 @@ def write_error_file(program_dir: Path, error: ReplacementError) -> Path | None:
         return None
 
 
+# 追加本文の描画だけに使う設定。従来の置換設定とは独立。
+INFORMATION_MAP_NAME = "教室所在地_地図.png"
+INFORMATION_MAP_URL = "http://map.yahoo.co.jp/pl?lat=34.16714361&lon=134.60663139&sc=2&mode=map&pointer=on"
+
+
+def information_html(map_name: str | None, entries: Sequence[tuple[str, int]] | None = None, map_width: float = 190.0) -> str:
+    """番号付き配列の参照順から本文を構築する（HTML原稿の読み込み不要）。"""
+    import html
+
+    arrays = {
+        "title": INFORMATION_TITLES, "heading": INFORMATION_HEADINGS,
+        "subheading": INFORMATION_SUBHEADINGS, "body": INFORMATION_BODIES,
+        "list": INFORMATION_LISTS, "table": INFORMATION_TABLES,
+        "source": INFORMATION_SOURCES,
+    }
+    blocks = []
+    for kind, index in (INFORMATION_CONTENT_ORDER if entries is None else entries):
+        value = arrays[kind][index]
+        element_id = f"{kind}_{index + 1}"
+        if kind in ("title", "heading", "subheading", "body"):
+            tag = {"title": "h1", "heading": "h2", "subheading": "h3", "body": "p"}[kind]
+            text = html.escape(value).replace("\n", "<br>")
+            if value == "詳しい地図で見る":
+                text = f'<a href="{html.escape(INFORMATION_MAP_URL, quote=True)}">{text}</a>'
+            blocks.append(f'<{tag} id="{element_id}">{text}</{tag}>')
+            if value == "教室所在地" and map_name:
+                blocks.append(f'<p id="location_map"><img src="{html.escape(map_name, quote=True)}" width="{map_width:.2f}"></p>')
+        elif kind == "table":
+            caption, rows = value
+            blocks.append(f'<table id="{element_id}">')
+            if caption:
+                blocks.append(f'<tr><th colspan="2">{html.escape(caption)}</th></tr>')
+            for row in rows:
+                blocks.append('<tr>' + ''.join(f'<td>{html.escape(cell)}</td>' for cell in row) + '</tr>')
+            blocks.append('</table>')
+        else:
+            tag, items = value
+            blocks.append(f'<{tag} id="{element_id}">')
+            for text, links in items:
+                rendered = html.escape(text).replace("\n", "<br>")
+                for label, url in links:
+                    rendered = rendered.replace(html.escape(label), f'<a href="{html.escape(url, quote=True)}">{html.escape(label)}</a>')
+                blocks.append(f'<li>{rendered}</li>')
+            blocks.append(f'</{tag}>')
+    return ''.join(blocks)
+
+
+def information_regions(pymupdf: Any, page: Any) -> tuple[tuple[Any, ...], ...]:
+    """p4の既存文字より上と、新規p5・p6に2段組の本文領域を定義する。"""
+    width, height = page.rect.width, page.rect.height
+    # 添付PDFと同じ比率で配置。既存文字を検査し、領域の侵入を防ぐ。
+    scale_x, scale_y = width / 810.0, height / 1012.5
+    def columns(top: float, bottom: float) -> tuple[Any, ...]:
+        return (
+            pymupdf.Rect(35 * scale_x, top * scale_y, 395 * scale_x, bottom * scale_y),
+            pymupdf.Rect(415 * scale_x, top * scale_y, 775 * scale_x, bottom * scale_y),
+        )
+    regions = (columns(80, 505), columns(80, 970), columns(80, 970))
+    for block in page.get_text("blocks"):
+        if block[6] == 0 and any(pymupdf.Rect(block[:4]).intersects(rect) for rect in regions[0]):
+            raise ReplacementError("p4の本文領域が既存文字と重なっています。", str(block[4]))
+    return regions
+
+
+def prepare_information_overlay(pymupdf: Any, page: Any, map_path: Path | None) -> tuple[bytes, tuple[tuple[str, ...], ...], float]:
+    """全文が3ページ内に入る最大の本文サイズを0.25pt刻みで選ぶ。"""
+    import io
+
+    regions = information_regions(pymupdf, page)
+    archive = pymupdf.Archive(str(map_path.parent)) if map_path else None
+    map_width = 190.0
+    if map_path:
+        try:
+            image = pymupdf.Pixmap(str(map_path))
+            map_width = min(190.0, 160.0 * image.width / image.height)
+        except Exception as exc:
+            raise ReplacementError("地図画像を読み込めません。", str(exc)) from exc
+    def block_story(size: float, entry: tuple[str, int]) -> Any:
+        # 同じCSSでブロック単位に配置し、段落・表をページ境界で分断しない。
+        return pymupdf.Story(information_html(map_path.name if map_path else None, (entry,), map_width),
+                             user_css=css_for_blocks,
+                             em=size, archive=archive)
+    css_for_blocks = (
+        "body { font-family:sans-serif; margin:0; color:#111; line-height:1.12; }"
+        "p { margin:0 0 0.22em; } h1 { font-size:1.35em; margin:0.3em 0 0.2em; }"
+        "h2 { font-size:1.12em; margin:0.4em 0 0.18em; } h3 { font-size:1.04em; margin:0.2em 0; }"
+        "ul,ol { margin:0.15em 0 0.25em; padding-left:1.3em; } li { margin:0; }"
+        "table { border-collapse:collapse; width:100%; margin:0.2em 0; }"
+        "td,th { border:0.4pt solid #888; padding:0.12em; } a { color:#16375b; }"
+    )
+    flat = [(page_index, rect) for page_index, columns in enumerate(regions) for rect in columns]
+    selected = None
+    placements = []
+    for quarter_points in range(96, 23, -1):
+        size = quarter_points / 4
+        column = 0
+        y = flat[0][1].y0
+        trial = []
+        for number, entry in enumerate(INFORMATION_CONTENT_ORDER):
+            while column < len(flat):
+                page_index, area = flat[column]
+                rect = pymupdf.Rect(area.x0, y, area.x1, area.y1)
+                candidate = block_story(size, entry)
+                more, filled = candidate.place(rect)
+                fits = not more and filled[3] <= area.y1 + 0.01
+                # 見出しの直後のブロックも同じ列へ入ることを確認。
+                if fits and entry[0] in ("title", "heading", "subheading") and number + 1 < len(INFORMATION_CONTENT_ORDER):
+                    following = block_story(size, INFORMATION_CONTENT_ORDER[number + 1])
+                    next_rect = pymupdf.Rect(area.x0, filled[3], area.x1, area.y1)
+                    next_more, next_filled = following.place(next_rect)
+                    fits = not next_more and next_filled[3] <= area.y1 + 0.01
+                if fits:
+                    trial.append((page_index, rect, entry))
+                    y = filled[3]
+                    break
+                column += 1
+                if column < len(flat):
+                    y = flat[column][1].y0
+            if column == len(flat):
+                break
+        else:
+            selected, placements = size, trial
+            break
+    if selected is None:
+        raise ReplacementError("全文をp4〜p6に収められません。", "本文は省略せず、処理を中止しました。")
+    buffer = io.BytesIO()
+    writer = pymupdf.DocumentWriter(buffer)
+    orders = []
+    links = []
+    try:
+        for page_index in range(3):
+            device = writer.begin_page(page.rect)
+            ids = []
+            for target, rect, entry in placements:
+                if target != page_index:
+                    continue
+                block = block_story(selected, entry)
+                more, filled = block.place(rect)
+                if more or filled[3] > rect.y1 + 0.01:
+                    raise ReplacementError("本文ブロックが描画領域を超えました。")
+                def record_link(position: Any) -> None:
+                    if position.href:
+                        links.append((page_index, position.rect, position.href))
+                block.element_positions(record_link)
+                block.draw(device)
+                ids.append(f"{entry[0]}_{entry[1] + 1}")
+            writer.end_page()
+            orders.append(tuple(ids))
+    finally:
+        writer.close()
+    with pymupdf.open(stream=buffer.getvalue(), filetype="pdf") as overlay:
+        if map_path and not any(page.get_images() for page in overlay):
+            raise ReplacementError("地図画像が本文に描画されませんでした。")
+        # 日本語のリンクは字形ごとに位置が返るため、同じ行でまとめる。
+        link_lines: dict[tuple[int, str, float, float], Any] = {}
+        for page_index, coordinates, url in links:
+            rect = pymupdf.Rect(coordinates)
+            if rect.is_empty:
+                continue
+            key = (page_index, url, round(rect.y0, 2), round(rect.y1, 2))
+            if key in link_lines:
+                link_lines[key] |= rect
+            else:
+                link_lines[key] = rect
+        for (page_index, url, _, _), rect in link_lines.items():
+            overlay[page_index].insert_link({"kind": pymupdf.LINK_URI, "from": rect, "uri": url})
+        return overlay.tobytes(), tuple(orders), selected
+
+
+def validate_information_text(doc: Any) -> None:
+    """全文の各項目が抽出文字に残っていることを確認する。"""
+    def compact(text: str) -> str:
+        return "".join(unicodedata.normalize("NFKC", text).split())
+    actual = compact("".join(doc[index].get_text() for index in (3, 4, 5)))
+    expected = list(INFORMATION_TITLES + INFORMATION_HEADINGS + INFORMATION_SUBHEADINGS + INFORMATION_BODIES)
+    for _, rows in INFORMATION_TABLES:
+        for row in rows:
+            expected.extend(row)
+    for caption, _ in INFORMATION_TABLES:
+        if caption:
+            expected.append(caption)
+    for _, items in INFORMATION_LISTS + INFORMATION_SOURCES:
+        expected.extend(text for text, _ in items)
+    for text in expected:
+        if compact(text) not in actual:
+            raise ReplacementError("追加本文の検証に失敗しました。", f"確認できない本文：{text}")
+
+
+def add_information_pages(pymupdf: Any, legacy_path: Path, output_path: Path, map_path: Path | None) -> None:
+    """検証済み5ページPDFへ本文を追加し、検証後だけ7ページPDFを確定する。"""
+    temporary_path = output_path.with_name(f".{output_path.name}.{uuid.uuid4().hex}.tmp.pdf")
+    try:
+        with pymupdf.open(legacy_path) as original:
+            if original.page_count != 5:
+                raise ReplacementError("追加処理の入力PDFは5ページである必要があります。")
+            overlay_bytes, page_orders, size = prepare_information_overlay(pymupdf, original[3], map_path)
+            regions = information_regions(pymupdf, original[3])
+            with pymupdf.open(stream=original.tobytes(), filetype="pdf") as result:
+                # 現行p5の前に2ページ挿入。既存ページの内容は編集しない。
+                with pymupdf.open() as background:
+                    background.insert_pdf(original, from_page=3, to_page=3)
+                    background_page = background[0]
+                    for block in background_page.get_text("blocks"):
+                        if block[6] == 0:
+                            background_page.add_redact_annot(pymupdf.Rect(block[:4]), fill=None, cross_out=False)
+                    background_page.apply_redactions(images=0, graphics=2, text=0)
+                    for index in (4, 5):
+                        new_page = result.new_page(pno=index, width=original[3].rect.width, height=original[3].rect.height)
+                        new_page.show_pdf_page(new_page.rect, background, 0)
+                        # 背景を残しながら文字の判読性を確保する。
+                        for rect in regions[index - 3]:
+                            new_page.draw_rect(rect, color=None, fill=(1, 1, 1), fill_opacity=0.86)
+                with pymupdf.open(stream=overlay_bytes, filetype="pdf") as overlay:
+                    for index in range(3):
+                        result[index + 3].show_pdf_page(result[index + 3].rect, overlay, index)
+                        for link in overlay[index].get_links():
+                            if link.get("kind") == pymupdf.LINK_URI:
+                                result[index + 3].insert_link({"kind": pymupdf.LINK_URI, "from": link["from"], "uri": link["uri"]})
+                result.save(temporary_path)
+            with pymupdf.open(temporary_path) as check:
+                if check.page_count != 7:
+                    raise ReplacementError("追加処理後のページ数が7ではありません。")
+                for old_index, new_index in ((0, 0), (1, 1), (2, 2), (4, 6)):
+                    if original[old_index].get_text() != check[new_index].get_text() or _render_hash(original[old_index]) != _render_hash(check[new_index]):
+                        raise ReplacementError("維持対象ページの内容または見た目が変わりました。", f"最終p{new_index + 1}")
+                for block in original[3].get_text("blocks"):
+                    if block[6] == 0:
+                        rect = pymupdf.Rect(block[:4])
+                        before = original[3].get_pixmap(clip=rect, dpi=COMPARISON_DPI, alpha=False)
+                        after = check[3].get_pixmap(clip=rect, dpi=COMPARISON_DPI, alpha=False)
+                        if before.samples != after.samples:
+                            raise ReplacementError("p4の既存文字の見た目が変わりました。", block[4])
+                baseline = original[3].get_pixmap(alpha=False)
+                diagnosis = _diagnose_edited_page_outside_rectangles(
+                    check[3], 3, (3, baseline.width, baseline.height, baseline.n, baseline.stride, baseline.samples),
+                    [AllowedChange("追加本文", rect) for rect in regions[0]], output_path.parent,
+                )
+                if diagnosis is not None:
+                    raise ReplacementError("p4の追加本文領域外で見た目が変わりました。", _format_difference_diagnosis(diagnosis))
+                validate_information_text(check)
+            temporary_path.replace(output_path)
+            print(f"追加本文の文字サイズ：{size:.2f}pt")
+            for index, ids in enumerate(page_orders, 4):
+                print(f"p{index}の掲載順：{', '.join(ids)}")
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """指定文字列の差し替えと4ページ目から5ページ目への移動を安全に実行する。"""
     args = parse_arguments(argv)
     program_dir = Path(__file__).resolve().parent
     doc: Any | None = None
+    legacy_path: Path | None = None
     try:
+        if args.map_image and args.map_link_only:
+            raise ReplacementError("--map-imageと--map-link-onlyは同時に指定できません。")
+        map_path = None if args.map_link_only else (args.map_image or program_dir / INFORMATION_MAP_NAME).resolve()
+        if map_path is not None and not map_path.is_file():
+            raise ReplacementError("教室所在地の地図画像が見つかりません。", "添付HTMLには地図画像がありません。--map-imageで画像を指定してください。地図リンクのみへの仕様変更を承認する場合は--map-link-onlyを指定してください。")
         validate_information_move_configuration()
         input_path = find_input_pdf(program_dir)
         output_path = find_available_path(program_dir / OUTPUT_PDF_NAME)
@@ -3009,10 +3505,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             pymupdf, doc, prepared, moves
         )
         apply_information_moves(pymupdf, doc, information_moves)
+        legacy_path = output_path.with_name(f".{output_path.name}.{uuid.uuid4().hex}.legacy.pdf")
         save_and_validate(
             pymupdf,
             doc,
-            output_path,
+            legacy_path,
             snapshot,
             prepared,
             moves,
@@ -3020,6 +3517,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             general_schedule_heading_rect,
             description_plan,
         )
+
+        add_information_pages(pymupdf, legacy_path, output_path, map_path)
 
         before_images: tuple[Path, ...] = ()
         after_images: tuple[Path, ...] = ()
@@ -3060,6 +3559,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"エラー情報：{error_path.name}", file=sys.stderr)
         return 1
     finally:
+        if legacy_path is not None:
+            legacy_path.unlink(missing_ok=True)
         if doc is not None:
             doc.close()
 
