@@ -564,8 +564,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="変更前の3～5ページ目と変更後の3～7ページ目を確認用PNGとして出力します。",
     )
-    parser.add_argument("--map-image", type=Path, help="教室所在地の地図画像（省略時はスクリプトと同じ場所の教室所在地_地図.png）")
-    parser.add_argument("--map-link-only", action="store_true", help="地図画像を掲載せず、地図リンクだけを掲載する仕様変更を明示します。")
     return parser.parse_args(argv)
 
 
@@ -3224,10 +3222,6 @@ def write_error_file(program_dir: Path, error: ReplacementError) -> Path | None:
 
 
 # 追加本文の描画だけに使う設定。従来の置換設定とは独立。
-INFORMATION_MAP_NAME = "教室所在地_地図.png"
-INFORMATION_MAP_URL = "http://map.yahoo.co.jp/pl?lat=34.16714361&lon=134.60663139&sc=2&mode=map&pointer=on"
-
-
 def information_html(map_name: str | None, entries: Sequence[tuple[str, int]] | None = None, map_width: float = 190.0) -> str:
     """番号付き配列の参照順から本文を構築する（HTML原稿の読み込み不要）。"""
     import html
@@ -3243,13 +3237,11 @@ def information_html(map_name: str | None, entries: Sequence[tuple[str, int]] | 
         value = arrays[kind][index]
         element_id = f"{kind}_{index + 1}"
         if kind in ("title", "heading", "subheading", "body"):
+            if value == "詳しい地図で見る":
+                continue
             tag = {"title": "h1", "heading": "h2", "subheading": "h3", "body": "p"}[kind]
             text = html.escape(value).replace("\n", "<br>")
-            if value == "詳しい地図で見る":
-                text = f'<a href="{html.escape(INFORMATION_MAP_URL, quote=True)}">{text}</a>'
             blocks.append(f'<{tag} id="{element_id}">{text}</{tag}>')
-            if value == "教室所在地" and map_name:
-                blocks.append(f'<p id="location_map"><img src="{html.escape(map_name, quote=True)}" width="{map_width:.2f}"></p>')
         elif kind == "table":
             caption, rows = value
             blocks.append(f'<table id="{element_id}">')
@@ -3397,7 +3389,14 @@ def validate_information_text(doc: Any) -> None:
     def compact(text: str) -> str:
         return "".join(unicodedata.normalize("NFKC", text).split())
     actual = compact("".join(doc[index].get_text() for index in (3, 4, 5)))
-    expected = list(INFORMATION_TITLES + INFORMATION_HEADINGS + INFORMATION_SUBHEADINGS + INFORMATION_BODIES)
+    expected = [
+        text
+        for text in INFORMATION_TITLES
+        + INFORMATION_HEADINGS
+        + INFORMATION_SUBHEADINGS
+        + INFORMATION_BODIES
+        if text != "詳しい地図で見る"
+    ]
     for _, rows in INFORMATION_TABLES:
         for row in rows:
             expected.extend(row)
@@ -3478,11 +3477,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     doc: Any | None = None
     legacy_path: Path | None = None
     try:
-        if args.map_image and args.map_link_only:
-            raise ReplacementError("--map-imageと--map-link-onlyは同時に指定できません。")
-        map_path = None if args.map_link_only else (args.map_image or program_dir / INFORMATION_MAP_NAME).resolve()
-        if map_path is not None and not map_path.is_file():
-            raise ReplacementError("教室所在地の地図画像が見つかりません。", "添付HTMLには地図画像がありません。--map-imageで画像を指定してください。地図リンクのみへの仕様変更を承認する場合は--map-link-onlyを指定してください。")
+        map_path = None
         validate_information_move_configuration()
         input_path = find_input_pdf(program_dir)
         output_path = find_available_path(program_dir / OUTPUT_PDF_NAME)
