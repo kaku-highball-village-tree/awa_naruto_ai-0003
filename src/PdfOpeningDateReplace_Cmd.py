@@ -3418,6 +3418,46 @@ def _p4_image_parts(pymupdf: Any, page: Any) -> tuple[dict[str, Any], dict[str, 
     return images[0], images[1]
 
 
+def _selectable_japanese_font() -> Path:
+    """透明な選択用文字レイヤーに使う日本語フォントを探す。"""
+    windows_dir = Path(os.environ.get("WINDIR", r"C:\Windows"))
+    candidates = (
+        windows_dir / "Fonts" / "YuGothM.ttc",
+        windows_dir / "Fonts" / "msgothic.ttc",
+        windows_dir / "Fonts" / "meiryo.ttc",
+        Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+        Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.otf"),
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    raise ReplacementError("選択用の日本語フォントが見つかりません。")
+
+
+def add_selectable_image2_text(pymupdf: Any, page: Any) -> None:
+    """画像2領域の既存文字へ、見た目を変えない選択用文字レイヤーを重ねる。"""
+    font_path = _selectable_japanese_font()
+    image2_top = page.rect.height * 0.5
+    for block in page.get_text("dict").get("blocks", []):
+        if block.get("type") != 0 or block.get("bbox", (0, 0, 0, 0))[1] < image2_top:
+            continue
+        for line in block.get("lines", []):
+            spans = line.get("spans", [])
+            text = "".join(span.get("text", "") for span in spans)
+            if not text.strip() or not spans:
+                continue
+            rect = pymupdf.Rect(line["bbox"])
+            fontsize = max(float(span.get("size", 1.0)) for span in spans)
+            page.insert_textbox(
+                rect,
+                text,
+                fontfile=str(font_path),
+                fontsize=fontsize,
+                render_mode=3,
+                overlay=True,
+            )
+
+
 def add_information_pages(pymupdf: Any, legacy_path: Path, output_path: Path, map_path: Path | None) -> None:
     """検証済み5ページPDFへ本文・画像2・p3複製を追加し、9ページPDFを確定する。"""
     temporary_path = output_path.with_name(f".{output_path.name}.{uuid.uuid4().hex}.tmp.pdf")
@@ -3429,6 +3469,7 @@ def add_information_pages(pymupdf: Any, legacy_path: Path, output_path: Path, ma
             overlay_bytes, page_orders, size = prepare_information_overlay(pymupdf, original[3], map_path)
             regions = information_regions(pymupdf, original[3])
             with pymupdf.open(stream=original.tobytes(), filetype="pdf") as result:
+                add_selectable_image2_text(pymupdf, result[2])
                 # p4から画像2だけを除去し、既存文字・画像1・図形は残す。
                 result[3].delete_image(image2["xref"])
                 # 現行p5の前に本文2ページと、画像2＋既存文字のページを挿入する。
@@ -3463,10 +3504,12 @@ def add_information_pages(pymupdf: Any, legacy_path: Path, output_path: Path, ma
             with pymupdf.open(temporary_path) as check:
                 if check.page_count != 9:
                     raise ReplacementError("追加処理後のページ数が9ではありません。")
-                for old_index, new_index in ((0, 0), (1, 1), (2, 2), (4, 8)):
+                for old_index, new_index in ((0, 0), (1, 1), (4, 8)):
                     if original[old_index].get_text() != check[new_index].get_text() or _render_hash(original[old_index]) != _render_hash(check[new_index]):
                         raise ReplacementError("維持対象ページの内容または見た目が変わりました。", f"最終p{new_index + 1}")
-                if original[2].get_text() != check[3].get_text() or _render_hash(original[2]) != _render_hash(check[3]):
+                if _render_hash(original[2]) != _render_hash(check[2]) or original[2].get_text() not in check[2].get_text():
+                    raise ReplacementError("p3の選択用文字レイヤー追加後に内容が維持されていません。")
+                if _render_hash(original[2]) != _render_hash(check[3]) or original[2].get_text() not in check[3].get_text():
                     raise ReplacementError("p3の複製ページが完全一致していません。")
                 if original[3].get_text() != check[7].get_text():
                     raise ReplacementError("画像2ページの既存文字が維持されていません。")
