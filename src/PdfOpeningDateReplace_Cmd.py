@@ -3166,7 +3166,7 @@ def render_comparison_images(
 ) -> tuple[Path, ...]:
     """3～5ページ目をPDFとは独立した確認用PNGへ描画する。"""
     paths: list[Path] = []
-    indexes = set(range(2, 8)) if doc.page_count == 8 else edited_page_indexes()
+    indexes = set(range(2, 9)) if doc.page_count == 9 else edited_page_indexes()
     for page_index in sorted(indexes):
         path = _available_comparison_path(program_dir, phase, page_index + 1)
         pixmap = doc[page_index].get_pixmap(dpi=COMPARISON_DPI, alpha=False)
@@ -3388,7 +3388,7 @@ def validate_information_text(doc: Any) -> None:
     """全文の各項目が抽出文字に残っていることを確認する。"""
     def compact(text: str) -> str:
         return "".join(unicodedata.normalize("NFKC", text).split())
-    actual = compact("".join(doc[index].get_text() for index in (3, 4, 5)))
+    actual = compact("".join(doc[index].get_text() for index in (4, 5, 6)))
     expected = [
         text
         for text in INFORMATION_TITLES
@@ -3419,7 +3419,7 @@ def _p4_image_parts(pymupdf: Any, page: Any) -> tuple[dict[str, Any], dict[str, 
 
 
 def add_information_pages(pymupdf: Any, legacy_path: Path, output_path: Path, map_path: Path | None) -> None:
-    """検証済み5ページPDFへ本文と画像2を追加し、検証後だけ8ページPDFを確定する。"""
+    """検証済み5ページPDFへ本文・画像2・p3複製を追加し、9ページPDFを確定する。"""
     temporary_path = output_path.with_name(f".{output_path.name}.{uuid.uuid4().hex}.tmp.pdf")
     try:
         with pymupdf.open(legacy_path) as original:
@@ -3457,23 +3457,27 @@ def add_information_pages(pymupdf: Any, legacy_path: Path, output_path: Path, ma
                         for link in overlay[index].get_links():
                             if link.get("kind") == pymupdf.LINK_URI:
                                 result[index + 3].insert_link({"kind": pymupdf.LINK_URI, "from": link["from"], "uri": link["uri"]})
+                # 本文配置後、現在のp3を完全複製して新しいp4として挿入する。
+                result.copy_page(2, to=3)
                 result.save(temporary_path)
             with pymupdf.open(temporary_path) as check:
-                if check.page_count != 8:
-                    raise ReplacementError("追加処理後のページ数が8ではありません。")
-                for old_index, new_index in ((0, 0), (1, 1), (2, 2), (4, 7)):
+                if check.page_count != 9:
+                    raise ReplacementError("追加処理後のページ数が9ではありません。")
+                for old_index, new_index in ((0, 0), (1, 1), (2, 2), (4, 8)):
                     if original[old_index].get_text() != check[new_index].get_text() or _render_hash(original[old_index]) != _render_hash(check[new_index]):
                         raise ReplacementError("維持対象ページの内容または見た目が変わりました。", f"最終p{new_index + 1}")
-                if original[3].get_text() != check[6].get_text():
+                if original[2].get_text() != check[3].get_text() or _render_hash(original[2]) != _render_hash(check[3]):
+                    raise ReplacementError("p3の複製ページが完全一致していません。")
+                if original[3].get_text() != check[7].get_text():
                     raise ReplacementError("画像2ページの既存文字が維持されていません。")
                 for block in original[3].get_text("blocks"):
                     if block[6] == 0:
                         rect = pymupdf.Rect(block[:4])
                         text = block[4].strip()
-                        if text and not check[3].search_for(text):
+                        if text and not check[4].search_for(text):
                             raise ReplacementError("p4の既存文字が維持されていません。", text)
                 remaining_images = [
-                    image for image in check[3].get_image_info(xrefs=True)
+                    image for image in check[4].get_image_info(xrefs=True)
                     if image["width"] > 1 and image["height"] > 1
                 ]
                 if len(remaining_images) != 1 or remaining_images[0]["bbox"][1] > image2["bbox"][1]:
