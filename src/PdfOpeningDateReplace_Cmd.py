@@ -3166,7 +3166,7 @@ def render_comparison_images(
 ) -> tuple[Path, ...]:
     """3～5ページ目をPDFとは独立した確認用PNGへ描画する。"""
     paths: list[Path] = []
-    indexes = set(range(2, 7)) if doc.page_count == 7 else edited_page_indexes()
+    indexes = set(range(2, 8)) if doc.page_count == 8 else edited_page_indexes()
     for page_index in sorted(indexes):
         path = _available_comparison_path(program_dir, phase, page_index + 1)
         pixmap = doc[page_index].get_pixmap(dpi=COMPARISON_DPI, alpha=False)
@@ -3410,20 +3410,33 @@ def validate_information_text(doc: Any) -> None:
             raise ReplacementError("追加本文の検証に失敗しました。", f"確認できない本文：{text}")
 
 
+def _p4_image_parts(pymupdf: Any, page: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+    """p4の上側画像1と下側画像2を座標で特定する。"""
+    images = sorted(page.get_image_info(xrefs=True), key=lambda image: image["bbox"][1])
+    if len(images) != 2 or any(not image["xref"] for image in images):
+        raise ReplacementError("p4の画像を2枚として特定できません。", f"検出画像数：{len(images)}")
+    return images[0], images[1]
+
+
 def add_information_pages(pymupdf: Any, legacy_path: Path, output_path: Path, map_path: Path | None) -> None:
-    """検証済み5ページPDFへ本文を追加し、検証後だけ7ページPDFを確定する。"""
+    """検証済み5ページPDFへ本文と画像2を追加し、検証後だけ8ページPDFを確定する。"""
     temporary_path = output_path.with_name(f".{output_path.name}.{uuid.uuid4().hex}.tmp.pdf")
     try:
         with pymupdf.open(legacy_path) as original:
             if original.page_count != 5:
                 raise ReplacementError("追加処理の入力PDFは5ページである必要があります。")
+            image1, image2 = _p4_image_parts(pymupdf, original[3])
             overlay_bytes, page_orders, size = prepare_information_overlay(pymupdf, original[3], map_path)
             regions = information_regions(pymupdf, original[3])
             with pymupdf.open(stream=original.tobytes(), filetype="pdf") as result:
-                # 現行p5の前に2ページ挿入。既存ページの内容は編集しない。
+                # p4から画像2だけを除去し、既存文字・画像1・図形は残す。
+                result[3].delete_image(image2["xref"])
+                # 現行p5の前に本文2ページと、画像2＋既存文字のページを挿入する。
                 with pymupdf.open() as background:
                     background.insert_pdf(original, from_page=3, to_page=3)
                     background_page = background[0]
+                    _, background_image2 = _p4_image_parts(pymupdf, background_page)
+                    background_page.delete_image(background_image2["xref"])
                     for block in background_page.get_text("blocks"):
                         if block[6] == 0:
                             background_page.add_redact_annot(pymupdf.Rect(block[:4]), fill=None, cross_out=False)
@@ -3434,6 +3447,10 @@ def add_information_pages(pymupdf: Any, legacy_path: Path, output_path: Path, ma
                         # 背景を残しながら文字の判読性を確保する。
                         for rect in regions[index - 3]:
                             new_page.draw_rect(rect, color=None, fill=(1, 1, 1), fill_opacity=0.86)
+                image_page = result.new_page(pno=6, width=original[3].rect.width, height=original[3].rect.height)
+                image_page.show_pdf_page(image_page.rect, original, 3)
+                image_page1, _ = _p4_image_parts(pymupdf, image_page)
+                image_page.delete_image(image_page1["xref"])
                 with pymupdf.open(stream=overlay_bytes, filetype="pdf") as overlay:
                     for index in range(3):
                         result[index + 3].show_pdf_page(result[index + 3].rect, overlay, index)
@@ -3442,25 +3459,25 @@ def add_information_pages(pymupdf: Any, legacy_path: Path, output_path: Path, ma
                                 result[index + 3].insert_link({"kind": pymupdf.LINK_URI, "from": link["from"], "uri": link["uri"]})
                 result.save(temporary_path)
             with pymupdf.open(temporary_path) as check:
-                if check.page_count != 7:
-                    raise ReplacementError("追加処理後のページ数が7ではありません。")
-                for old_index, new_index in ((0, 0), (1, 1), (2, 2), (4, 6)):
+                if check.page_count != 8:
+                    raise ReplacementError("追加処理後のページ数が8ではありません。")
+                for old_index, new_index in ((0, 0), (1, 1), (2, 2), (4, 7)):
                     if original[old_index].get_text() != check[new_index].get_text() or _render_hash(original[old_index]) != _render_hash(check[new_index]):
                         raise ReplacementError("維持対象ページの内容または見た目が変わりました。", f"最終p{new_index + 1}")
+                if original[3].get_text() != check[6].get_text():
+                    raise ReplacementError("画像2ページの既存文字が維持されていません。")
                 for block in original[3].get_text("blocks"):
                     if block[6] == 0:
                         rect = pymupdf.Rect(block[:4])
-                        before = original[3].get_pixmap(clip=rect, dpi=COMPARISON_DPI, alpha=False)
-                        after = check[3].get_pixmap(clip=rect, dpi=COMPARISON_DPI, alpha=False)
-                        if before.samples != after.samples:
-                            raise ReplacementError("p4の既存文字の見た目が変わりました。", block[4])
-                baseline = original[3].get_pixmap(alpha=False)
-                diagnosis = _diagnose_edited_page_outside_rectangles(
-                    check[3], 3, (3, baseline.width, baseline.height, baseline.n, baseline.stride, baseline.samples),
-                    [AllowedChange("追加本文", rect) for rect in regions[0]], output_path.parent,
-                )
-                if diagnosis is not None:
-                    raise ReplacementError("p4の追加本文領域外で見た目が変わりました。", _format_difference_diagnosis(diagnosis))
+                        text = block[4].strip()
+                        if text and not check[3].search_for(text):
+                            raise ReplacementError("p4の既存文字が維持されていません。", text)
+                remaining_images = [
+                    image for image in check[3].get_image_info(xrefs=True)
+                    if image["width"] > 1 and image["height"] > 1
+                ]
+                if len(remaining_images) != 1 or remaining_images[0]["bbox"][1] > image2["bbox"][1]:
+                    raise ReplacementError("p4の画像1が維持されていません。")
                 validate_information_text(check)
             temporary_path.replace(output_path)
             print(f"追加本文の文字サイズ：{size:.2f}pt")
