@@ -37,8 +37,7 @@ p:last-child { margin-bottom: 0; }
 .nav-contact a { font-weight: 700; font-size: 1.05rem; white-space: nowrap; }
 .nav-contact small { display: block; color: var(--muted); }
 .main-content { min-width: 0; }
-.hero { position: relative; isolation: isolate; overflow: hidden; background: #e9f0df; padding: 48px 40px; border-radius: 12px; }
-.hero::after { content: ""; position: absolute; z-index: -1; width: 300px; height: 300px; border: 45px solid #dce8cc; border-radius: 50%; right: -145px; top: -100px; }
+.hero { position: relative; isolation: isolate; overflow: hidden; background-color: #e9f0df; background-image: linear-gradient(rgb(233 240 223 / 88%), rgb(233 240 223 / 88%)), url("images/img_awa_naruto_ai_0001.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; padding: 48px 40px; border-radius: 12px; }
 .eyebrow { font-size: .75rem; letter-spacing: .14em; color: var(--muted); font-weight: 700; margin-bottom: 10px; }
 .badge { display: inline-block; padding: 3px 12px; border: 1px solid #b7c9a8; border-radius: 4px; font-size: .8rem; background: #f7faf2; margin: 14px 0; }
 h1 { font-size: clamp(2rem, 4vw, 3.2rem); letter-spacing: .04em; margin-bottom: 16px; }
