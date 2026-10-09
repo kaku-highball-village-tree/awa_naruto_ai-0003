@@ -120,6 +120,15 @@ address { font-style: normal; }
   .teacher-card h3 span { display: block; margin: 4px 0 0; }
 }
 
-.learning-page { padding-top: 0; background-color: var(--paper); background-image: linear-gradient(rgb(252 252 247 / 88%), rgb(252 252 247 / 88%)), url("images/img_awa_naruto_ai_0002.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; }
+.learning-page { padding-top: 0; }
 .learning-page h1 { font-size: clamp(1.4rem, 2.1vw, 1.9rem); letter-spacing: normal; margin-bottom: 24px; }
 .learning-page .hero-actions { margin-top: 28px; }
+
+.learning-site { min-height: 100vh; background-color: var(--paper); background-image: linear-gradient(rgb(252 252 247 / 88%), rgb(252 252 247 / 88%)), url("images/img_awa_naruto_ai_0002.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; }
+.learning-site .site-header, .learning-site .site-footer { background: transparent; }
+.learning-site .site-nav li a { background-color: transparent; }
+.learning-site .site-nav li a:hover { background-color: #eaf0e6; }
+.learning-site .learning-page h2 { margin-top: 48px; }
+.learning-site .learning-page h3 { margin-top: 32px; margin-bottom: 16px; }
+.learning-site .learning-page ul { padding-left: 1.5em; margin: 0 0 24px; }
+.learning-site .learning-page li + li { margin-top: 4px; }
