@@ -119,3 +119,7 @@ address { font-style: normal; }
   .beginner-section, .contact-section { padding: 24px 20px; }
   .teacher-card h3 span { display: block; margin: 4px 0 0; }
 }
+
+.learning-page { padding-top: 0; }
+.learning-page h1 { font-size: clamp(1.4rem, 2.1vw, 1.9rem); letter-spacing: normal; margin-bottom: 24px; }
+.learning-page .hero-actions { margin-top: 28px; }
