@@ -120,6 +120,6 @@ address { font-style: normal; }
   .teacher-card h3 span { display: block; margin: 4px 0 0; }
 }
 
-.learning-page { padding-top: 0; }
+.learning-page { padding-top: 0; background-color: var(--paper); background-image: linear-gradient(rgb(252 252 247 / 88%), rgb(252 252 247 / 88%)), url("images/img_awa_naruto_ai_0002.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; }
 .learning-page h1 { font-size: clamp(1.4rem, 2.1vw, 1.9rem); letter-spacing: normal; margin-bottom: 24px; }
 .learning-page .hero-actions { margin-top: 28px; }
