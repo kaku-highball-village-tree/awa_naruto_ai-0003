@@ -132,3 +132,5 @@ address { font-style: normal; }
 .learning-site .learning-page h3 { margin-top: 32px; margin-bottom: 16px; }
 .learning-site .learning-page ul { padding-left: 1.5em; margin: 0 0 24px; }
 .learning-site .learning-page li + li { margin-top: 4px; }
+
+.learning-site .learning-page h4 { font-size: 1.1rem; line-height: 1.5; margin: 24px 0 16px; }
