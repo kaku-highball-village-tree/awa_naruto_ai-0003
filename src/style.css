@@ -148,8 +148,9 @@ address { font-style: normal; }
 .learning-page .learning-hero { padding: 48px 40px; border-radius: 12px; background-color: #e9f0df; background-image: linear-gradient(rgb(233 240 223 / 88%), rgb(233 240 223 / 88%)), url("images/img_awa_naruto_ai_0002.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; }
 .learning-page .learning-hero h1 { font-size: clamp(2rem, 3.5vw, 2.8rem); line-height: 1.5; margin-bottom: 0; }
 .learning-page .learning-hero .learning-hero-description { margin-top: 24px; }
+.learning-page .learning-hero .learning-hero-examples { padding-left: 1.5em; margin: 0 0 24px; }
 .learning-page .learning-hero .learning-hero-examples > li + li { margin-top: 18px; }
-.learning-page .learning-hero .learning-hero-examples p { margin-top: 6px; }
+.learning-page .learning-hero .learning-hero-examples p { margin-top: 18px; }
 @media (max-width: 800px) {
   .learning-page .learning-hero { padding: 32px 24px; }
 }
