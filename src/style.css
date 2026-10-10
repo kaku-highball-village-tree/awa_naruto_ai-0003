@@ -124,10 +124,7 @@ address { font-style: normal; }
 .learning-page h1 { font-size: clamp(1.4rem, 2.1vw, 1.9rem); letter-spacing: normal; margin-bottom: 24px; }
 .learning-page .hero-actions { margin-top: 28px; }
 
-.learning-site { min-height: 100vh; background-color: var(--paper); background-image: linear-gradient(rgb(252 252 247 / 88%), rgb(252 252 247 / 88%)), url("images/img_awa_naruto_ai_0002.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; }
-.learning-site .site-header, .learning-site .site-footer { background: transparent; }
-.learning-site .site-nav li a { background-color: transparent; }
-.learning-site .site-nav li a:hover { background-color: #eaf0e6; }
+.learning-site { min-height: 100vh; }
 .learning-site .learning-page h2 { margin-top: 48px; }
 .learning-site .learning-page h3 { margin-top: 32px; margin-bottom: 16px; }
 .learning-site .learning-page ul { padding-left: 1.5em; margin: 0 0 24px; }
@@ -146,4 +143,14 @@ address { font-style: normal; }
 .contact-access .map-link { margin: 16px 0 0; }
 @media (max-width: 800px) {
   .contact-access .contact-map { height: 300px; }
+}
+
+.learning-page .learning-hero { padding: 48px 40px; border-radius: 12px; background-color: #e9f0df; background-image: linear-gradient(rgb(233 240 223 / 88%), rgb(233 240 223 / 88%)), url("images/img_awa_naruto_ai_0002.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; }
+.learning-page .learning-hero h1 { font-size: clamp(2rem, 3.5vw, 2.8rem); line-height: 1.5; margin-bottom: 0; }
+@media (max-width: 800px) {
+  .learning-page .learning-hero { padding: 32px 24px; }
+}
+@media (max-width: 480px) {
+  .learning-page .learning-hero { padding: 28px 20px; }
+  .learning-page .learning-hero h1 { font-size: 1.7rem; }
 }
