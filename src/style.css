@@ -158,3 +158,5 @@ address { font-style: normal; }
   .learning-page .learning-hero { padding: 28px 20px; }
   .learning-page .learning-hero h1 { font-size: 1.7rem; }
 }
+
+#courses .course-education { margin-top: 24px; }
