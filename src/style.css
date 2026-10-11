@@ -166,3 +166,5 @@ address { font-style: normal; }
 #courses .course.high-school { background-color: #f4f0f8; }
 
 .site-footer .footer-home-link { color: inherit; text-decoration: none; }
+
+.site-footer .footer-st-link { display: inline-block; margin-left: 1em; }
