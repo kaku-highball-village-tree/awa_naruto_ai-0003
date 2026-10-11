@@ -160,3 +160,5 @@ address { font-style: normal; }
 }
 
 #courses .course-education { margin-top: 24px; }
+
+#courses .course.junior-high { background-color: #eef6f8; }
