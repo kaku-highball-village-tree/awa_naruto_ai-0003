@@ -241,3 +241,10 @@ address { font-style: normal; }
   .information-recruitment-page .information-details div { grid-template-columns: 1fr; }
   .information-recruitment-page .information-details dd { padding-top: .35rem; }
 }
+
+.name-image {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
