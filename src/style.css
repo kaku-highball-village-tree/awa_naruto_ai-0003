@@ -251,3 +251,4 @@ address { font-style: normal; }
 
 /* 高3共通テスト直前対策コース専用 */
 #courses .course.exam-prep-course { background-color: #fff1e8; border-color: #ead4c4; }
+#courses .course.high-school-foundation { background-color: #f9eef2; border-color: #e8cfd7; }
