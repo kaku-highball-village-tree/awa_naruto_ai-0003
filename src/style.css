@@ -248,3 +248,6 @@ address { font-style: normal; }
   height: auto;
   vertical-align: middle;
 }
+
+/* 高3共通テスト直前対策コース専用 */
+#courses .course.exam-prep-course { background-color: #fff1e8; border-color: #ead4c4; }
