@@ -22,8 +22,8 @@ p:last-child { margin-bottom: 0; }
 .skip-link:focus { transform: translateY(0); }
 .site-header { background: #fff; border-bottom: 1px solid var(--line); }
 .header-inner { max-width: 1200px; margin: auto; padding: 26px 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.brand { font-size: 1.5rem; font-weight: 700; text-decoration: none; line-height: 1.5; }
-.brand span { display: block; font-size: .75rem; font-weight: 400; letter-spacing: .1em; color: var(--muted); }
+.brand { font-size: 2rem; font-weight: 700; text-decoration: none; line-height: 1.5; }
+.brand span { display: block; font-size: 1rem; font-weight: 400; letter-spacing: .1em; color: var(--muted); }
 .header-note { font-size: .85rem; color: var(--muted); margin: 0; }
 .layout { max-width: 1200px; margin: 0 auto; padding: 40px 32px 64px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start; }
 .site-nav { position: sticky; top: 24px; padding-top: 10px; }
