@@ -219,3 +219,25 @@ address { font-style: normal; }
   .necessity-information-page .information-related-link { text-align: left; }
   .necessity-information-page .information-reason, .necessity-information-page .information-start-early { padding-left: .75rem; }
 }
+
+.information-recruitment-page { overflow-wrap: anywhere; }
+.information-recruitment-page .information-recruitment-title { margin-top: 0; font-size: clamp(1.5rem, 3vw, 2rem); }
+.information-recruitment-page .information-course-section, .information-recruitment-page .information-location { margin-block: 1.75rem; }
+.information-recruitment-page .information-course-section h2, .information-recruitment-page .information-location h2 { border-bottom: 2px solid #6b5cad; padding-bottom: .25rem; font-size: clamp(1.25rem, 2.5vw, 1.6rem); }
+.information-recruitment-page .information-course-subtitle { color: #bc4d00; font-size: 1.17rem; }
+.information-recruitment-page .information-schedule { font-size: clamp(1.2rem, 3vw, 1.5rem); }
+.information-recruitment-page .information-key-message { border-left: .3rem solid #6b5cad; background: rgb(245 242 255 / 80%); padding: .5rem 1rem; }
+.information-recruitment-page .information-key-message p:first-child { margin-top: .5rem; }
+.information-recruitment-page .information-key-message p:last-child { margin-bottom: .5rem; }
+.information-recruitment-page .information-details { margin: 0; border: 1px solid #b8b8d8; }
+.information-recruitment-page .information-details div { display: grid; grid-template-columns: minmax(8rem, 25%) 1fr; }
+.information-recruitment-page .information-details div + div { border-top: 1px solid #b8b8d8; }
+.information-recruitment-page .information-details dt, .information-recruitment-page .information-details dd { margin: 0; padding: .65rem .75rem; }
+.information-recruitment-page .information-details dt { background: rgb(232 232 248 / 90%); font-weight: 700; }
+.information-recruitment-page .information-pending { font-weight: 700; }
+.information-recruitment-page .information-subject-list { padding-left: 1.5rem; }
+.information-recruitment-page .information-note { border-left: .25rem solid #b8b8d8; padding-left: .75rem; font-size: .9rem; }
+@media (max-width: 480px) {
+  .information-recruitment-page .information-details div { grid-template-columns: 1fr; }
+  .information-recruitment-page .information-details dd { padding-top: .35rem; }
+}
