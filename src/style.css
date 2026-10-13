@@ -262,3 +262,9 @@ address { font-style: normal; }
 
 /* 情報Ⅰ学習理由ページの背景画像と本文余白 */
 .main-content.necessity-information-page { background-image: url("images/img_awa_naruto_ai_0006.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; padding: 5mm; }
+
+
+/* 募集コース一覧 */
+.course-list-box { margin: 24px 0; }
+.course-list-box ul { margin: 0; padding-left: 1.5em; }
+.course-list-box li + li { margin-top: 4px; }
