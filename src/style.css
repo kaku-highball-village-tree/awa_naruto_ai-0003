@@ -268,3 +268,7 @@ address { font-style: normal; }
 .course-list-box { margin: 24px 0; background-image: url("images/img_awa_naruto_ai_0002.png"); background-size: cover; background-position: center; background-repeat: no-repeat; }
 .course-list-box ul { margin: 0; padding-left: 1.5em; }
 .course-list-box li + li { margin-top: 4px; }
+
+
+/* 教室紹介ページの要約枠より下に背景画像を表示 */
+.learning-page .learning-content { background-image: url("images/img_awa_naruto_ai_0005.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; }
