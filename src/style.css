@@ -258,3 +258,7 @@ address { font-style: normal; }
 
 /* 情報Ⅰ生徒募集ページ専用の背景画像 */
 .main-content.information-recruitment-page { background-image: linear-gradient(rgb(252 252 247 / 68%), rgb(252 252 247 / 68%)), url("images/img_awa_naruto_ai_0008.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; padding: 5mm; }
+
+
+/* 情報Ⅰ学習理由ページの背景画像と本文余白 */
+.main-content.necessity-information-page { background-image: url("images/img_awa_naruto_ai_0006.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; padding: 5mm; }
