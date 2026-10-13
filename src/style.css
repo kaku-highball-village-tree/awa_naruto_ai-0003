@@ -265,6 +265,6 @@ address { font-style: normal; }
 
 
 /* 募集コース一覧 */
-.course-list-box { margin: 24px 0; }
+.course-list-box { margin: 24px 0; background-image: url("images/img_awa_naruto_ai_0002.png"); background-size: cover; background-position: center; background-repeat: no-repeat; }
 .course-list-box ul { margin: 0; padding-left: 1.5em; }
 .course-list-box li + li { margin-top: 4px; }
