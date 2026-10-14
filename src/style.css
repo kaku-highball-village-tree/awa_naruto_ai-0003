@@ -272,3 +272,23 @@ address { font-style: normal; }
 
 /* 教室紹介ページの要約枠より下に背景画像を表示 */
 .learning-page .learning-content { background-image: url("images/img_awa_naruto_ai_0005.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; }
+
+
+/* オーダーメイドコース専用の背景画像 */
+.custom-courses-page .beginner-section {
+  background-image: url("images/img_awa_naruto_ai_0003.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.custom-courses-page .custom-courses-content {
+  display: flow-root;
+  background-image: url("images/img_awa_naruto_ai_0004.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.custom-courses-page .custom-courses-content .course,
+.custom-courses-page .custom-courses-content .contact-section {
+  background-color: transparent;
+}
