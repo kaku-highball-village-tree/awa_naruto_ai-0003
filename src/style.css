@@ -292,3 +292,13 @@ address { font-style: normal; }
 .custom-courses-page .custom-courses-content .contact-section {
   background-color: transparent;
 }
+
+
+/* トップページ後半の本文専用背景 */
+.main-content > section[aria-labelledby="naruto-ai-title"] {
+  background-image: url("images/img_awa_naruto_ai_0006.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+}
