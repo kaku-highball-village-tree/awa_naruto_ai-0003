@@ -303,3 +303,7 @@ address { font-style: normal; }
   background-attachment: scroll;
   padding: 5mm;
 }
+
+/* トップページの来訪者カウンター */
+.visitor-counter { display: flex; flex-wrap: wrap; align-items: center; gap: .25em .5em; margin: 24px 0 0; color: #000080; }
+.visitor-counter img { max-width: 100%; height: auto; }
