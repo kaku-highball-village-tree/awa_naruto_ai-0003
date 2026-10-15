@@ -301,4 +301,5 @@ address { font-style: normal; }
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: scroll;
+  padding: 5mm;
 }
