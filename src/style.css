@@ -310,3 +310,5 @@ address { font-style: normal; }
 
 .main-content.beginner-page { background-image: linear-gradient(rgb(252 252 247 / 20%), rgb(252 252 247 / 20%)), url("images/img_awa_naruto_ai_0008.png"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: scroll; padding: 5mm; }
 .main-content.beginner-page > .beginner-section { background-color: rgb(255 255 255 / 65%); }
+
+.main-content.beginner-page > .beginner-section > section > h2 { margin-top: 1.25rem; }
